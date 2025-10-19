@@ -1,12 +1,10 @@
 import cv2
 from ultralytics import YOLO
 
-# Load YOLO model (can use 'yolov8n.pt' for faster speed)
-model = YOLO('yolov8n.pt')
+model = YOLO('yolov8n.pt')  # Load pretrained YOLOv8 model
+target_class = 'bottle'      # The object you want to detect
 
-# Open webcam (0 = default camera)
 cap = cv2.VideoCapture(0)
-
 
 frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -20,30 +18,26 @@ while True:
     if not ret:
         break
 
-    # Run YOLO inference
     results = model(frame, stream=True)
 
     for r in results:
-        boxes = r.boxes
-        for box in boxes:
-            # Get coordinates
-            x1, y1, x2, y2 = box.xyxy[0]
-            conf = box.conf[0]
+        for box in r.boxes:
             cls = int(box.cls[0])
             label = model.names[cls]
+            
+            # Only proceed if the label matches your target
+            if label == target_class:
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                conf = float(box.conf[0])
+                
+                # Draw box and label
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.putText(frame, f"{label} {conf:.2f}", (x1, y1 - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
-            # Print coordinates
-            print(f"{label}: ({x1:.0f}, {y1:.0f}), ({x2:.0f}, {y2:.0f})  conf={conf:.2f}")
+                print(f"Detected {label}: ({x1}, {y1}) → ({x2}, {y2}), conf={conf:.2f}")
 
-            # Draw on frame
-            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
-            cv2.putText(frame, f"{label} {conf:.2f}", (int(x1), int(y1) - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-
-    # Display video
-    cv2.imshow("YOLO Live", frame)
-
-    # Press 'q' to quit
+    cv2.imshow("YOLO Specific Detection", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
