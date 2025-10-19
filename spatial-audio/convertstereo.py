@@ -33,6 +33,7 @@ class SpatialAudioEngine:
         Returns:
             left_gain: Volume for left channel (0.0 to 1.0)
             right_gain: Volume for right channel (0.0 to 1.0)
+            frequency_shift: Frequency multiplier for height perception
         """
         # Calculate distance
         distance = math.sqrt(x**2 + y**2 + z**2)
@@ -58,22 +59,28 @@ class SpatialAudioEngine:
         left_gain = math.cos(pan_angle) * volume
         right_gain = math.sin(pan_angle) * volume
 
-        return left_gain, right_gain
+        # Height perception using frequency shift
+        # Positive z (above) = higher pitch, Negative z (below) = lower pitch
+        # Map z from -5 to 5 to frequency multiplier 0.8 to 1.2
+        z_normalized = np.clip(z / 5.0, -1.0, 1.0)
+        frequency_shift = 1.0 + (z_normalized * 0.2)  # Range: 0.8 to 1.2
+
+        return left_gain, right_gain, frequency_shift
 
     def _generate_audio_callback(self, outdata, frames, time_info, status):
         """Callback function for sounddevice to generate audio in real-time"""
         if status:
             print(f"Audio callback status: {status}")
 
+        # Get current stereo parameters
+        x, y, z = self.position
+        left_gain, right_gain, frequency_shift = self._calculate_stereo_params(x, y, z)
+
         # Generate time array
         t = (np.arange(frames) + self.phase) / self.sample_rate
 
-        # Generate mono sine wave
-        wave = np.sin(2 * np.pi * self.frequency * t)
-
-        # Get current stereo parameters
-        x, y, z = self.position
-        left_gain, right_gain = self._calculate_stereo_params(x, y, z)
+        # Generate mono sine wave with frequency shift for height
+        wave = np.sin(2 * np.pi * self.frequency * frequency_shift * t)
 
         # Apply stereo panning
         outdata[:, 0] = wave * left_gain   # Left channel
@@ -89,13 +96,13 @@ class SpatialAudioEngine:
         Args:
             x: Horizontal position (negative = left, positive = right)
             y: Depth/distance (negative = closer, positive = farther)
-            z: Vertical position (for future use)
+            z: Vertical position (negative = below, positive = above)
         """
         self.position = [x, y, z]
 
         # Calculate spatial parameters for display
         distance = math.sqrt(x**2 + y**2 + z**2)
-        left_gain, right_gain = self._calculate_stereo_params(x, y, z)
+        left_gain, right_gain, frequency_shift = self._calculate_stereo_params(x, y, z)
 
         # Determine direction
         if x < -0.5:
@@ -105,9 +112,17 @@ class SpatialAudioEngine:
         else:
             direction = "CENTER"
 
+        # Determine height
+        if z > 0.5:
+            height = "ABOVE"
+        elif z < -0.5:
+            height = "BELOW"
+        else:
+            height = "EYE-LEVEL"
+
         print(f"Object at ({x:.2f}, {y:.2f}, {z:.2f}) | "
-              f"Distance: {distance:.2f} | Direction: {direction} | "
-              f"L:{left_gain:.2f} R:{right_gain:.2f}")
+              f"Distance: {distance:.2f} | Direction: {direction} | Height: {height} | "
+              f"L:{left_gain:.2f} R:{right_gain:.2f} | Pitch:{frequency_shift:.2f}x")
 
     def play(self):
         """Start playing the spatial audio"""
@@ -154,13 +169,15 @@ def demo_spatial_audio():
 
         # Test scenarios
         scenarios = [
-            ("Center, close", 0, 2, 0),
-            ("Right side, medium distance", 4, 5, 0),
-            ("Left side, medium distance", -4, 5, 0),
-            ("Far right", 6, 10, 0),
-            ("Far left", -6, 10, 0),
-            ("Very close, slight left", -1, 1, 0),
-            ("Moving left to right (close)", None),  # Animation
+            ("Center, eye level, close", 0, 2, 0),
+            ("Right side, eye level", 4, 5, 0),
+            ("Left side, eye level", -4, 5, 0),
+            ("Above and center", 0, 5, 3),
+            ("Below and center", 0, 5, -3),
+            ("Above and right", 4, 5, 2),
+            ("Below and left", -4, 5, -2),
+            ("Very high", 0, 5, 5),
+            ("Moving up and down", None),  # Animation
         ]
 
         engine.play()
@@ -175,8 +192,8 @@ def demo_spatial_audio():
                 # Animated movement
                 description = item[0]
                 print(f"\n--- {description} ---")
-                for x in np.linspace(-5, 5, 30):
-                    engine.update_object_position(x, 3, 0)
+                for z in np.linspace(-5, 5, 30):
+                    engine.update_object_position(0, 5, z)
                     time.sleep(0.1)
 
         engine.stop()
