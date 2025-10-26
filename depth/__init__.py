@@ -45,6 +45,14 @@ from .enhanced_depth_processor_with_persistence import (
 
 from .depth_stream import HFDepthEstimator, DepthStream
 
+# Import detection + depth integration components
+try:
+    from .detection_depth_stream import DetectionDepthStream
+    _DETECTION_AVAILABLE = True
+except ImportError:
+    DetectionDepthStream = None
+    _DETECTION_AVAILABLE = False
+
 __all__ = [
     "DepthProcessor",
     "create_depth_processor",
@@ -67,5 +75,9 @@ __all__ = [
     "HFDepthEstimator",
     "DepthStream",
 ]
+
+# Add DetectionDepthStream if available
+if _DETECTION_AVAILABLE:
+    __all__.append("DetectionDepthStream")
 
 __version__ = "1.0.0"
