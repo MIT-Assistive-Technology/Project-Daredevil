@@ -138,13 +138,6 @@ Project-Daredevil/
 
 Project progress is tracked in our [GitHub Project Board](https://github.com/orgs/MIT-Assistive-Technology/projects/1/views/1).
 
-### Adding New Features
-
-1. **New Camera Source**: Add to `camera/index.py`
-2. **New Depth Model**: Extend `depth/depth_processor.py`
-3. **New Detection Class**: Modify detection module
-4. **New Audio Effect**: Extend spatial audio module
-
 ### Testing
 
 Run integration tests:
@@ -158,39 +151,12 @@ python3 depth/test_depth_integration.py
 
 ### Module Documentation
 
-#### Camera Module (`camera/`)
-
-Handles video streaming from various sources.
-
-**Key Features**:
-- Auto-detection of available cameras
-- Phone camera support via EpocCam, DroidCam, Continuity Camera
-- IP camera streaming
-- Unified interface for all camera types
-
-**Usage**:
-```python
-from camera import CameraStream, create_phone_camera_stream
-
-# Auto-detect phone camera
-camera = create_phone_camera_stream()
-
-# Or use specific camera
-camera = CameraStream(camera_index=1)
-
-# Get frame
-frame = camera.get_frame()
-```
-
-#### Depth Module (`depth/`)
-
 Monocular depth estimation using Hugging Face DPT models.
 
 **Key Features**:
 - Offline-capable depth estimation
 - Bounding box ROI processing
 - Multiple normalization methods
-- Apple Silicon acceleration
 - Integration-ready interface
 
 **Usage**:
@@ -206,7 +172,7 @@ depth_value = result['normalized_depth']  # 0.0 to 1.0
 
 Object detection and tracking (YOLO-based).
 
-**Status**: In development
+**Status**: Completed
 
 **Focus**: Water bottle detection for demo purposes
 
@@ -230,23 +196,7 @@ The system uses a universal coordinate system:
 
 ## Phone Camera Setup
 
-### Method 1: EpocCam (Recommended)
-
-1. **Install EpocCam**:
-   - Download EpocCam from the App Store (iPhone) or Google Play (Android)
-   - Install EpocCam Server on your Mac from [https://www.elgato.com/epoccam](https://www.elgato.com/epoccam)
-
-2. **Setup**:
-   - Connect iPhone to Mac via USB or WiFi
-   - Open EpocCam on iPhone
-   - EpocCam will appear as a camera device (usually index 1 or 2)
-
-3. **Test**:
-```bash
-python3 camera/index.py
-```
-
-### Method 2: DroidCam (Android)
+### Method 1: DroidCam (Android)
 
 1. **Install DroidCam**:
    - Download DroidCam from Google Play Store
@@ -256,7 +206,7 @@ python3 camera/index.py
    - Connect via USB or WiFi
    - DroidCam will appear as camera device
 
-### Method 3: IP Webcam (Android)
+### Method 2: IP Webcam (Android)
 
 1. **Install IP Webcam**:
    - Download IP Webcam from Google Play Store
@@ -266,14 +216,15 @@ python3 camera/index.py
    - Note the IP address (e.g., 192.168.1.100:8080)
    - Use IP camera streaming in the camera module
 
-### Method 4: Continuity Camera (iPhone)
+### Method 3: Continuity Camera (iPhone)
 
 1. **Enable Continuity Camera**:
    - iPhone must be signed into same Apple ID as Mac
    - iPhone must be nearby and unlocked
+   - For a more reliable connection, can directly connect to Mac via wire AND with permission granted
 
 2. **Usage**:
-   - Continuity Camera appears as camera index 1+
+   - Continuity Camera appears as camera index 1
    - Automatically detected by the camera module
 
 ## Troubleshooting
@@ -288,7 +239,7 @@ python3 camera/index.py
 
 **Problem**: Phone camera not detected
 **Solution**:
-1. Ensure EpocCam/DroidCam is running on phone
+1. Ensure DroidCam is running on phone
 2. Check USB/WiFi connection
 3. Try IP camera method
 
