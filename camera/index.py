@@ -5,7 +5,7 @@ Camera module for streaming video from various sources including phone cameras.
 Supports:
 - Built-in laptop cameras
 - External USB cameras
-- Phone cameras via EpocCam, DroidCam, or Continuity Camera
+- Phone cameras via DroidCam or Continuity Camera
 - IP camera streaming (for IP Webcam apps)
 
 Usage:
