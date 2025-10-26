@@ -80,18 +80,26 @@ source env/bin/activate  # On macOS/Linux
 3. Install dependencies:
 ```bash
 pip install --upgrade pip
-pip install torch torchvision transformers opencv-python numpy ultralytics
+pip install torch torchvision transformers opencv-python numpy ultralytics PyOpenAL
+```
+
+4. **For spatial audio (macOS only)**, install OpenAL:
+```bash
+brew install openal-soft
 ```
 
 ## Quick Start Commands
 
 ### Run Everything (Recommended)
 ```bash
-# Live depth streaming
-python3 depth/depth_stream.py
+# Full system with detection, depth, and spatial audio
+python3 spatial-audio/integration.py
 
-# Integrated demo
-python3 depth/example_integration.py
+# Or just depth + detection
+python3 depth/detection_depth_stream.py
+
+# Live depth streaming only
+python3 depth/depth_stream.py
 ```
 
 ### Test Everything Works
@@ -178,11 +186,28 @@ Object detection and tracking (YOLO-based).
 
 #### Spatial Audio Module (`spatial-audio/`)
 
-Converts object positions and depths to spatial audio.
+Real 3D spatial audio using OpenAL, compatible with Apple AirPods.
 
-**Status**: In development
+**Status**: ✅ Completed
 
-**Features**: Stereo panning, depth-based audio positioning
+**Features**:
+- True 3D spatial audio using OpenAL
+- AirPods spatial audio compatible
+- Calm white noise for object localization
+- Real-time 3D positioning (30-60 Hz)
+- Depth-based distance rendering
+- Multi-object support (up to 10 simultaneous sources)
+
+**Usage**:
+```bash
+# Test spatial audio standalone
+python3 spatial-audio/index.py
+
+# Run full integration with detection + depth + audio
+python3 spatial-audio/integration.py
+```
+
+See [spatial-audio/README.md](spatial-audio/README.md) for full documentation.
 
 ### Coordinate System
 

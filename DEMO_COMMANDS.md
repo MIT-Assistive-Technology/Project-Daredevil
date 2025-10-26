@@ -1,6 +1,61 @@
-Laptop camera: source env/bin/activate && python detection_depth_integration.py --camera 0 --verbose --classes person bottle --confidence 0.3
+# Demo Commands - Quick Reference
 
-External camera: source env/bin/activate && python detection_depth_integration.py --camera 1 --verbose --classes person bottle --confidence 0.3
+## Quick Start (Recommended)
 
---> note: external camera aka continuity camera on iphone only works if on the same wifi (or plugged into the mac, which is much more reliable) and battery level is high enough?
+### Option 1: Individual Scripts (Simplest)
+
+```bash
+# Run full integration test (Detection + Depth + Spatial Audio)
+./run_full_test.sh
+
+# Run detection depth integration with specific args
+./run_detection_depth.sh --camera 0 --verbose --classes person bottle --confidence 0.3
+```
+
+### Option 2: Unified Script
+
+Use the `run_tests.sh` script for easy testing:
+
+```bash
+# Show menu and usage
+./run_tests.sh
+
+# Run full integration test (Detection + Depth + Spatial Audio)
+./run_tests.sh full
+
+# Run detection depth integration
+./run_tests.sh depth --camera 0 --verbose --classes person bottle --confidence 0.3
+
+# Install/upgrade dependencies
+./run_tests.sh deps
+```
+
+## Manual Commands (Alternative)
+
+### Full Integration Test (Detection + Depth + Spatial Audio)
+
+```bash
+source env/bin/activate && python3 test_full_integration.py
+```
+
+### Detection + Depth Only (No Audio)
+
+```bash
+# Laptop camera
+source env/bin/activate && python3 detection_depth_integration.py --camera 0 --verbose --classes person bottle --confidence 0.3
+
+# Alternative command
+source env/bin/activate && python3 depth/detection_depth_stream.py --classes person bottle cup
+```
+
+**Note:** External camera (Continuity Camera on iPhone) only works if:
+- Connected to the same WiFi, OR
+- Plugged into the Mac (more reliable)
+- iPhone has sufficient battery level
+
+### Spatial Audio Test Only
+
+```bash
+source env/bin/activate && python3 spatial-audio/spatial_audio_simple.py
+```
 
