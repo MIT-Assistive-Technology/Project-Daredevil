@@ -36,20 +36,14 @@ pip install torch torchvision transformers opencv-python numpy ultralytics
 ### Basic Usage
 
 ```bash
-# Run depth processing with auto-detected camera
-python3 run_depth.py
+# Live depth streaming
+python3 depth/depth_stream.py
 
-# Force laptop camera
-python3 run_depth.py --laptop
+# Integrated demo with camera
+python3 depth/example_integration.py
 
-# Force external camera
-python3 run_depth.py --external
-
-# Run tests
-python3 run_depth.py --test
-
-# List available cameras
-python3 run_depth.py --list-cameras
+# Test depth processing
+python3 depth/test_depth_integration.py
 ```
 
 ### Enhanced Depth Processing
@@ -240,26 +234,22 @@ Expected performance metrics:
 
 ### Built-in Laptop Camera
 
-```bash
-python3 run_depth.py --laptop
+Configure in `depth/depth_stream.py`:
+```python
+camera = CameraStream(camera_index=0)
 ```
 
 ### External Camera (iPhone/USB)
 
-```bash
-python3 run_depth.py --external
+Configure in `depth/depth_stream.py`:
+```python
+camera = CameraStream(camera_index=1)
 ```
 
 **Requirements for iPhone:**
 - iPhone signed into same Apple ID as Mac
 - iPhone nearby and unlocked
 - macOS Ventura or later
-
-### Specific Camera Index
-
-```bash
-python3 run_depth.py --camera 1
-```
 
 ## Coordinate System
 

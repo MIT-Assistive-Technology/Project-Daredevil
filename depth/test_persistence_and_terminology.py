@@ -208,7 +208,7 @@ def main():
         test_spatial_audio_metrics()
         
         print("\n" + "=" * 70)
-        print("✅ All tests completed successfully!")
+        print("[PASS] All tests completed successfully!")
         print("\nKey Features Demonstrated:")
         print("  ✓ Clear depth terminology (user_space_category, safety_zone, social_distance)")
         print("  ✓ Temporal persistence prevents objects from disappearing too quickly")
@@ -217,7 +217,7 @@ def main():
         print("  ✓ Background relationship classification (foreground, midground, background)")
         
     except Exception as e:
-        print(f"❌ Test failed: {e}")
+        print(f"[FAIL] Test failed: {e}")
         import traceback
         traceback.print_exc()
 

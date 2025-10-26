@@ -87,26 +87,20 @@ pip install torch torchvision transformers opencv-python numpy ultralytics
 
 ### Run Everything (Recommended)
 ```bash
-# Auto-detect best camera (tries external first, falls back to laptop)
-python3 run_depth.py
+# Live depth streaming
+python3 depth/depth_stream.py
 
-# Force laptop camera
-python3 run_depth.py --laptop
-
-# Force external camera (phone/USB)
-python3 run_depth.py --external
+# Integrated demo
+python3 depth/example_integration.py
 ```
 
 ### Test Everything Works
 ```bash
-# Run all tests
-python3 run_depth.py --test
-
 # List available cameras
-python3 run_depth.py --list-cameras
+python3 camera/index.py
 
-# Run integrated demo
-python3 run_depth.py --demo
+# Test depth processing
+python3 depth/test_depth_integration.py
 ```
 
 ### Individual Components
