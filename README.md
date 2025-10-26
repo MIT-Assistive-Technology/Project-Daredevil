@@ -88,37 +88,37 @@ pip install torch torchvision transformers opencv-python numpy ultralytics
 ### Run Everything (Recommended)
 ```bash
 # Auto-detect best camera (tries external first, falls back to laptop)
-python run_depth.py
+python3 run_depth.py
 
 # Force laptop camera
-python run_depth.py --laptop
+python3 run_depth.py --laptop
 
 # Force external camera (phone/USB)
-python run_depth.py --external
+python3 run_depth.py --external
 ```
 
 ### Test Everything Works
 ```bash
 # Run all tests
-python run_depth.py --test
+python3 run_depth.py --test
 
 # List available cameras
-python run_depth.py --list-cameras
+python3 run_depth.py --list-cameras
 
 # Run integrated demo
-python run_depth.py --demo
+python3 run_depth.py --demo
 ```
 
 ### Individual Components
 ```bash
 # Test depth processing only
-python depth/test_depth_integration.py
+python3 depth/test_depth_integration.py
 
 # Live depth streaming
-python depth/depth_stream.py
+python3 depth/depth_stream.py
 
 # Integrated demo
-python depth/example_integration.py
+python3 depth/example_integration.py
 ```
 
 ## Repository Structure
@@ -155,7 +155,7 @@ Project progress is tracked in our [GitHub Project Board](https://github.com/org
 
 Run integration tests:
 ```bash
-python depth/test_depth_integration.py
+python3 depth/test_depth_integration.py
 ```
 
 ---
@@ -249,7 +249,7 @@ The system uses a universal coordinate system:
 
 3. **Test**:
 ```bash
-python camera/index.py
+python3 camera/index.py
 ```
 
 ### Method 2: DroidCam (Android)

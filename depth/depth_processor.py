@@ -121,12 +121,32 @@ class DepthProcessor:
         outputs = self.model(**inputs)
 
         # Post-process to original frame size
-        post = self.processor.post_process_depth_estimation(
-            outputs, target_sizes=[(frame_rgb.shape[0], frame_rgb.shape[1])]
-        )
-
-        # Extract depth map
-        depth = post[0]["predicted_depth"].detach().cpu().numpy().astype(np.float32)
+        try:
+            # Try the new method first
+            post = self.processor.post_process_depth_estimation(
+                outputs, target_sizes=[(frame_rgb.shape[0], frame_rgb.shape[1])]
+            )
+            depth = post[0]["predicted_depth"].detach().cpu().numpy().astype(np.float32)
+            
+            # Convert to meters (DPT outputs in different units)
+            depth = depth / 1000.0  # Convert to meters
+        except AttributeError:
+            # Fallback for newer transformers versions
+            depth = outputs.predicted_depth.detach().cpu().numpy().astype(np.float32)
+            
+            # Handle different depth map formats
+            if len(depth.shape) == 3:
+                # If 3D, take the first channel or average across channels
+                if depth.shape[2] > 1:
+                    depth = np.mean(depth, axis=2)
+                else:
+                    depth = depth[:, :, 0]
+            
+            # Resize to original frame size
+            depth = cv2.resize(depth, (frame_rgb.shape[1], frame_rgb.shape[0]), interpolation=cv2.INTER_LINEAR)
+            
+            # Convert to meters (DPT outputs in different units)
+            depth = depth / 1000.0  # Convert to meters
 
         # Update depth statistics
         self._update_depth_stats(depth)
@@ -166,7 +186,10 @@ class DepthProcessor:
         x1, y1, x2, y2 = bbox
 
         # Ensure coordinates are within bounds
-        h, w = depth_map.shape
+        if len(depth_map.shape) == 3:
+            h, w = depth_map.shape[:2]
+        else:
+            h, w = depth_map.shape
         x1 = max(0, min(x1, w - 1))
         y1 = max(0, min(y1, h - 1))
         x2 = max(x1, min(x2, w))

@@ -9,7 +9,7 @@ This example shows how to:
 4. Provide depth information for spatial audio
 
 Usage:
-    python depth/example_integration.py
+    python3 depth/example_integration.py
 """
 
 import cv2
