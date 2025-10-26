@@ -23,6 +23,25 @@ Usage:
 """
 
 from .depth_processor import DepthProcessor, create_depth_processor, process_frame_depth
+from .enhanced_depth_processor import (
+    EnhancedDepthProcessor, 
+    create_enhanced_depth_processor,
+    DepthQualityMetrics,
+    SpatialAudioMetrics,
+    ReferencePoint,
+    ReferencePointManager,
+    TemporalDepthTracker,
+    DepthQualityAssessor,
+    SpatialContextAnalyzer,
+    DepthLayer,
+    MovementDirection
+)
+from .enhanced_depth_processor_with_persistence import (
+    EnhancedDepthProcessorWithPersistence,
+    create_enhanced_depth_processor_with_persistence,
+    PersistenceConfig,
+    ObjectState
+)
 
 from .depth_stream import HFDepthEstimator, DepthStream
 
@@ -30,6 +49,21 @@ __all__ = [
     "DepthProcessor",
     "create_depth_processor",
     "process_frame_depth",
+    "EnhancedDepthProcessor",
+    "create_enhanced_depth_processor",
+    "EnhancedDepthProcessorWithPersistence",
+    "create_enhanced_depth_processor_with_persistence",
+    "DepthQualityMetrics",
+    "SpatialAudioMetrics",
+    "ReferencePoint",
+    "ReferencePointManager",
+    "TemporalDepthTracker",
+    "DepthQualityAssessor",
+    "SpatialContextAnalyzer",
+    "DepthLayer",
+    "MovementDirection",
+    "PersistenceConfig",
+    "ObjectState",
     "HFDepthEstimator",
     "DepthStream",
 ]
