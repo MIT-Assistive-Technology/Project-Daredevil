@@ -90,6 +90,20 @@ brew install openal-soft
 
 ## Quick Start Commands
 
+### ⚡ Quickest Way to Launch
+
+```bash
+# One command - uses your default settings (camera 1, person bottle)
+./main.sh
+
+# Or use the configurable version
+./launch.sh --camera 1 --classes person bottle --volume 0.1 --confidence 0.3
+
+# Or use the web interface (most user-friendly)
+./setup_web.sh  # First time only
+./web_launch.py  # Then open http://localhost:8080
+```
+
 ### Run Everything (Recommended)
 ```bash
 # Full system with detection, depth, and spatial audio

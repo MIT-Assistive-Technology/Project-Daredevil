@@ -1,6 +1,38 @@
 # Demo Commands - Quick Reference
 
-## Quick Start (Recommended)
+## TL;DR run ```./setup_web.sh && ./web_launch.py``` in terminal.
+
+## Easiest Way to Launch
+
+### Option A: One-Command Launch (Simplest!)
+```bash
+./main.sh
+```
+
+### Option B: Configurable Launch
+```bash
+# Use default settings
+./launch.sh
+
+# Customize settings
+./launch.sh --camera 0 --classes person bottle cup --volume 0.2 --confidence 0.4
+
+# Show help
+./launch.sh --help
+```
+
+### Option C: Web Interface (Most User-Friendly)
+```bash
+# Set up the local web interface, first time only
+./setup_web.sh
+
+# Start the web control panel
+./web_launch.py
+
+# Then open your browser to: http://localhost:8080
+```
+
+## Quick Start (Recommended) - Alternative Methods
 
 ### Option 1: Individual Scripts (Simplest)
 
