@@ -19,6 +19,7 @@ class SimpleSpatialAudio:
         self.min_volume = min_volume  # Minimum volume when no objects detected
         self.max_volume = max_volume  # Maximum volume for very close objects
         self.objects: Dict[str, dict] = {}
+        self.object_channels: Dict[str, int] = {}  # Track which channel each object uses
         self.lock = threading.Lock()
         self.is_running = False
         
@@ -121,19 +122,41 @@ class SimpleSpatialAudio:
     def update_object(self, object_id, x, y, depth, volume=None, active=True):
         """Update object position"""
         with self.lock:
+            # Check if this is a new object or updated position
+            is_new_object = object_id not in self.objects
+            
+            prev_obj = self.objects.get(object_id, {})
+            volume_val = volume if volume else self.master_volume
+            
+            # Check if position/depth/volume changed significantly
+            position_changed = is_new_object or (
+                abs(prev_obj.get('x', 0) - x) > 0.05 or
+                abs(prev_obj.get('y', 0) - y) > 0.05 or
+                abs(prev_obj.get('depth', 0) - depth) > 0.1 or
+                abs(prev_obj.get('volume', 0) - volume_val) > 0.05
+            )
+            
             self.objects[object_id] = {
                 'x': x,
                 'y': y, 
                 'depth': depth,
-                'volume': volume if volume else self.master_volume,
+                'volume': volume_val,
                 'active': active,
-                'last_update': time.time()
+                'last_update': time.time(),
+                'needs_new_sound': position_changed  # Flag to indicate if sound needs regenerating
             }
     
     def _play_object_sound(self, object_id, obj_data):
         """Play spatial sound for object"""
         if not obj_data['active']:
             return
+        
+        # Only play new sound if position/depth/volume changed significantly
+        if not obj_data.get('needs_new_sound', True):
+            return
+        
+        # Mark that we've played a sound for this position
+        obj_data['needs_new_sound'] = False
         
         # Calculate panning and pitch based on depth and position
         pan, volume_mult = self._screen_to_pan(obj_data['x'], obj_data['y'], obj_data['depth'])
@@ -167,9 +190,21 @@ class SimpleSpatialAudio:
         # Convert to pygame sound
         try:
             sound = pygame.sndarray.make_sound(noise)
-            # Use a simple modulo to get channel index
-            channel_idx = abs(hash(object_id)) % self.max_sources
+            
+            # Get or assign channel for this object
+            if object_id in self.object_channels:
+                channel_idx = self.object_channels[object_id]
+            else:
+                # Use a simple modulo to get channel index
+                channel_idx = abs(hash(object_id)) % self.max_sources
+                self.object_channels[object_id] = channel_idx
+            
             channel = pygame.mixer.Channel(channel_idx)
+            
+            # IMPORTANT: Stop the channel before playing a new sound
+            # This prevents accumulating sounds
+            channel.stop()
+            
             channel.play(sound, loops=-1)  # Loop infinitely
         except Exception as e:
             # Silently fail - channels might be busy
@@ -200,19 +235,41 @@ class SimpleSpatialAudio:
                 with self.lock:
                     current_time = time.time()
                     
-                    # Count active objects
+                    # Track currently active object IDs
+                    current_active_ids = set()
                     active_objects = []
+                    
                     for object_id, obj_data in list(self.objects.items()):
-                        # Remove old objects
+                        # Remove old objects that haven't been updated in 2 seconds
                         if current_time - obj_data['last_update'] > 2.0:
+                            # Stop the channel for this removed object
+                            if object_id in self.object_channels:
+                                channel_idx = self.object_channels[object_id]
+                                try:
+                                    channel = pygame.mixer.Channel(channel_idx)
+                                    channel.stop()
+                                except:
+                                    pass
+                                del self.object_channels[object_id]
                             del self.objects[object_id]
                             continue
                         
                         if obj_data['active']:
+                            current_active_ids.add(object_id)
                             active_objects.append((object_id, obj_data))
                     
-                    # If no active objects, play no sound (silent)
-                    # Only play audio when objects are detected
+                    # Stop channels for objects that are no longer active
+                    for object_id in list(self.object_channels.keys()):
+                        if object_id not in current_active_ids:
+                            channel_idx = self.object_channels[object_id]
+                            try:
+                                channel = pygame.mixer.Channel(channel_idx)
+                                channel.stop()
+                            except:
+                                pass
+                            del self.object_channels[object_id]
+                    
+                    # Only play audio for currently active objects
                     if len(active_objects) > 0:
                         for object_id, obj_data in active_objects:
                             self._play_object_sound(object_id, obj_data)
@@ -241,8 +298,20 @@ class SimpleSpatialAudio:
         print("Spatial audio stopped")
     
     def remove_object(self, object_id):
-        """Remove object"""
+        """Remove object and stop its sound"""
         with self.lock:
+            # Stop the channel for this object
+            if object_id in self.object_channels:
+                channel_idx = self.object_channels[object_id]
+                try:
+                    channel = pygame.mixer.Channel(channel_idx)
+                    channel.stop()
+                except:
+                    pass
+                # Remove from tracking
+                del self.object_channels[object_id]
+            
+            # Remove from objects dict
             if object_id in self.objects:
                 del self.objects[object_id]
     
