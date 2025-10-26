@@ -185,13 +185,15 @@ depth_value = result['normalized_depth']  # 0.0 to 1.0
 Object detection and tracking (YOLO-based).
 
 **Status**: In development
+
 **Focus**: Water bottle detection for demo purposes
 
 ### Spatial Audio Module (`spatial-audio/`)
 
 Converts object positions and depths to spatial audio.
 
-**Status**: Completed
+**Status**: In development
+
 **Features**: Stereo panning, depth-based audio positioning
 
 ## Coordinate System
@@ -277,21 +279,104 @@ Project-Daredevil/
 └── README.md        # This file
 ```
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
-
-## License
-
-See LICENSE file for details.
-
 ## Acknowledgments
 
 - Hugging Face for the DPT depth estimation models
 - Ultralytics for YOLO object detection
 - OpenCV for computer vision utilities
 - Apple for Continuity Camera support
+# Project Daredevil
+
+**Spatial Audio Blind Assistance**
+
+Project Daredevil explores how consumer devices (such as iPhone, AirPods, webcams) can be used to provide affordable/real-time spatial audio feedback to blind and low-vision users. Our goal is to create a proof-of-concept system that translates depth perception into sound—like digital echolocation—to enhance spatial awareness in everyday environments.
+
+## Project Overview
+
+Project Daredevil consists of four main modules:
+
+1. **Camera Module** - Handles video streaming from various sources including phone cameras
+2. **Detection Module** - Object detection and tracking (YOLO-based)
+3. **Depth Module** - Monocular depth estimation using Hugging Face DPT models
+4. **Spatial Audio Module** - Converts object positions and depths to spatial audio
+
+## Project Motivations 
+
+- Make spatial awareness assistance affordable and portable!
+- Provide subtle, continuous cues (such as ambient whooshes, localized pitch shifts) instead of overwhelming object-to-sound mappings.
+- Enable detection of key social and safety cues such as:
+  - An approaching handshake
+  - Objects moving into one's path
+  - "The last 10 feet" problem
+  - Ambient depth shifts in hallways or open spaces
+
+## External Camera Options
+
+Four ways to use a phone as your camera:
+
+1. **DroidCam (Android)**
+   - Install DroidCam from Play Store
+   - Get DroidCam Server from [droidcam.com](https://droidcam.com)
+   - Connect via USB/WiFi
+   - Shows up as camera device
+
+2. **IP Webcam (Android)**
+   - Install IP Webcam from Play Store 
+   - Run on phone to get IP (e.g., 192.168.1.100:8080)
+   - Configure in camera module settings
+
+3. **Continuity Camera (iPhone)**
+   - Uses Apple Continuity feature
+   - iPhone + Mac need same Apple ID
+   - Phone must be nearby and unlocked
+   - Auto-detected as camera index 1+
+
+## Repository Structure
+
+```bash
+Project-Daredevil/
+├── camera/           # Camera streaming module
+├── detection/        # Object detection & tracking
+├── depth/           # Depth estimation module
+├── spatial-audio/   # Spatial audio processing
+├── env/             # Virtual environment
+└── README.md        # This file
+```
+
+## Success Criteria
+
+Our prototype should demonstrate:
+
+- Real-time object detection, depth estimation and directional audio
+- Clear, intuitive audio depth cues for our codesigners
+- Smooth integration of all system components
+
+Future goals include:
+
+- Voice command integration
+- iOS native app (LiDAR + ARKit + AirPods)
+- Continuous ambient spatial audio
+
+## Current Limitations
+
+- **Safety**: Audio feedback must not interfere with natural hearing
+- **Hardware**: Standard webcams have limited field of view
+- **Learning Curve**: Users need time to interpret depth-based audio cues
+
+## Development
+
+Project progress is tracked in our [GitHub Project Board](https://github.com/orgs/MIT-Assistive-Technology/projects/1/views/1).
+
+## Credits
+
+- Hugging Face - DPT depth estimation models
+- Ultralytics - YOLO object detection
+- OpenCV - Computer vision framework
+- Apple - Continuity Camera API
+
+---
+
+## About
+
+MIT Assistive Technology Club
+Fall 2025 Project
