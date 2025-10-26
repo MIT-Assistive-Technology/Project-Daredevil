@@ -35,7 +35,14 @@ Use the `run_tests.sh` script for easy testing:
 ### Full Integration Test (Detection + Depth + Spatial Audio)
 
 ```bash
+# Default
 source env/bin/activate && python3 test_full_integration.py
+
+# Use camera 1
+source env/bin/activate && python3 test_full_integration.py --camera 1
+
+# Use camera 1 with custom classes and volume
+source env/bin/activate && python3 test_full_integration.py --camera 1 --classes person bottle --volume 0.1 --confidence 0.3
 ```
 
 ### Detection + Depth Only (No Audio)
