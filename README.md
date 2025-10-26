@@ -80,7 +80,7 @@ source env/bin/activate  # On macOS/Linux
 3. Install dependencies:
 ```bash
 pip install --upgrade pip
-pip install torch torchvision transformers opencv-python numpy ultralytics PyOpenAL
+pip install torch torchvision transformers opencv-python numpy ultralytics PyOpenAL pygame
 ```
 
 4. **For spatial audio (macOS only)**, install OpenAL:
