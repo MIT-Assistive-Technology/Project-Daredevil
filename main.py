@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Quick test of full integration - Detection + Depth + Spatial Audio"""
+"""Project Daredevil - Main entry point (Detection + Depth + Spatial Audio)."""
 
 import sys
 import os
@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 def main():
     """Main function with argument parsing."""
     parser = argparse.ArgumentParser(
-        description="Full Integration Test - Detection + Depth + Spatial Audio"
+        description="Project Daredevil - Full System Runner (Detection + Depth + Spatial Audio)"
     )
     parser.add_argument(
         "--camera", type=int, default=0, help="Camera index (default: 0)"
@@ -37,13 +37,13 @@ def main():
     args = parser.parse_args()
 
     print("=" * 60)
-    print("Project Daredevil - Full System Integration Test")
+    print("Project Daredevil - Main Runner")
     print("=" * 60)
     print(f"\nCamera: {args.camera}")
     print(f"Target classes: {', '.join(args.classes)}")
     print(f"Master volume: {args.volume}")
     print(f"Confidence threshold: {args.confidence}")
-    print("\nThis will test:")
+    print("\nThis will run:")
     print("  1. Camera capture")
     print("  2. Object detection (YOLO)")
     print("  3. Depth estimation")
@@ -78,3 +78,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+

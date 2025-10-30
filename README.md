@@ -97,7 +97,7 @@ brew install openal-soft
 ./main.sh
 
 # Or use the configurable version
-./launch.sh --camera 1 --classes person bottle --volume 0.1 --confidence 0.3
+./main.sh --camera 1 --classes person bottle --volume 0.3 --confidence 0.3
 
 # Or use the web interface (most user-friendly)
 ./setup_web.sh  # First time only
@@ -107,13 +107,13 @@ brew install openal-soft
 ### Run Everything (Recommended)
 ```bash
 # Full system with detection, depth, and spatial audio
-python3 spatial-audio/integration.py
+source env/bin/activate && python3 main.py
 
-# Or just depth + detection
-python3 depth/detection_depth_stream.py
+# Just depth + detection (no audio)
+source env/bin/activate && python3 depth/detection_depth_stream.py
 
 # Live depth streaming only
-python3 depth/depth_stream.py
+source env/bin/activate && python3 depth/depth_stream.py
 ```
 
 ### Test Everything Works
@@ -132,9 +132,6 @@ python3 depth/test_depth_integration.py
 
 # Live depth streaming
 python3 depth/depth_stream.py
-
-# Integrated demo
-python3 depth/example_integration.py
 ```
 
 ## Repository Structure
@@ -145,6 +142,9 @@ Project-Daredevil/
 ├── detection/        # Object detection & tracking
 ├── depth/           # Depth estimation module
 ├── spatial-audio/   # Spatial audio processing
+├── main.py          # Central Python entrypoint
+├── main.sh          # Single launch script (configurable)
+├── web_launch.py    # Web control panel
 ├── env/             # Virtual environment
 └── README.md        # This file
 ```

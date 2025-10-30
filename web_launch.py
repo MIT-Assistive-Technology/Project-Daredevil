@@ -139,7 +139,7 @@ HTML_TEMPLATE = """
                 
                 <div class="form-group">
                     <label for="volume">Master Volume</label>
-                    <input type="number" id="volume" name="volume" value="0.1" min="0" max="1" step="0.05">
+                    <input type="number" id="volume" name="volume" value="0.3" min="0" max="1" step="0.05">
                     <small style="color: #666;">Volume level (0.0 = silent, 1.0 = max)</small>
                 </div>
                 
@@ -240,7 +240,7 @@ def start_system():
     # Build command
     venv_python = os.path.join(os.path.dirname(__file__), "env", "bin", "python3")
     cmd = (
-        [venv_python, "test_full_integration.py", "--camera", camera, "--classes"]
+        [venv_python, "main.py", "--camera", camera, "--classes"]
         + classes.split()
         + ["--volume", volume, "--confidence", confidence]
     )
