@@ -8,7 +8,7 @@ Supports:
 - Phone cameras via DroidCam or Continuity Camera
 - IP camera streaming (for IP Webcam apps)
 
-Usage:
+Usage example:
     from camera import CameraStream
 
     # Basic usage with auto-detection

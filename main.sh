@@ -14,6 +14,54 @@ print_info() {
     echo -e "${GREEN}[INFO]${NC} $1"
 }
 
+# Defaults (can be overridden by flags)
+CAMERA=1
+CLASSES="person bottle"
+VOLUME=0.3
+CONFIDENCE=0.3
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --camera)
+            CAMERA="$2"
+            shift 2
+            ;;
+        --classes)
+            shift
+            CLASSES="$@"
+            break
+            ;;
+        --volume)
+            VOLUME="$2"
+            shift 2
+            ;;
+        --confidence)
+            CONFIDENCE="$2"
+            shift 2
+            ;;
+        -h|--help)
+            echo "Usage: ./main.sh [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --camera N          Camera index (default: 1)"
+            echo "  --classes A B C     Target classes (default: person bottle)"
+            echo "  --volume X          Master volume 0.0-1.0 (default: 0.3)"
+            echo "  --confidence Y      Confidence threshold 0.0-1.0 (default: 0.3)"
+            echo ""
+            echo "Examples:"
+            echo "  ./main.sh"
+            echo "  ./main.sh --camera 0 --classes person bottle cup --volume 0.3"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
 # Check if we're in the project directory
 if [ ! -d "env" ]; then
     echo "Error: Virtual environment not found. Please run this script from the Project-Daredevil directory."
@@ -25,15 +73,15 @@ echo "============================================"
 echo "  Project Daredevil - Starting System"
 echo "============================================"
 echo ""
-print_info "Camera: 1 (iPhone Continuity Camera)"
-print_info "Classes: person, bottle"
-print_info "Volume: 0.1"
-print_info "Confidence: 0.3"
+print_info "Camera: $CAMERA"
+print_info "Classes: $CLASSES"
+print_info "Volume: $VOLUME"
+print_info "Confidence: $CONFIDENCE"
 echo ""
 echo "Press Ctrl+C to stop"
 echo "============================================"
 echo ""
 
 # Activate virtual environment and run
-source env/bin/activate && python3 test_full_integration.py --camera 1 --classes person bottle --volume 0.1 --confidence 0.3
+source env/bin/activate && python3 main.py --camera "$CAMERA" --classes $CLASSES --volume "$VOLUME" --confidence "$CONFIDENCE"
 

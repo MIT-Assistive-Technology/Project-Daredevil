@@ -65,7 +65,7 @@ case "${1:-menu}" in
     "full")
         print_info "Running full integration test..."
         check_dependencies
-        python3 test_full_integration.py
+        python3 main.py
         ;;
     "depth")
         print_info "Running detection depth integration..."

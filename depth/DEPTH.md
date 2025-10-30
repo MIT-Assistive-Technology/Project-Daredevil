@@ -39,9 +39,6 @@ pip install torch torchvision transformers opencv-python numpy ultralytics
 # Live depth streaming
 python3 depth/depth_stream.py
 
-# Integrated demo with camera
-python3 depth/example_integration.py
-
 # Test depth processing
 python3 depth/test_depth_integration.py
 ```
@@ -49,9 +46,6 @@ python3 depth/test_depth_integration.py
 ### Enhanced Depth Processing
 
 ```bash
-# Run enhanced depth demo with advanced metrics
-python3 depth/enhanced_example.py
-
 # Test enhanced depth processing
 python3 depth/test_enhanced_depth.py
 
@@ -67,9 +61,6 @@ python3 depth/test_depth_integration.py
 
 # Live depth streaming
 python3 depth/depth_stream.py
-
-# Integrated demo
-python3 depth/example_integration.py
 ```
 
 ## Enhanced Depth Processing
@@ -363,7 +354,6 @@ depth/
 ├── depth_processor.py       # Core depth processing
 ├── depth_stream.py          # Live streaming
 ├── test_depth_integration.py # Integration tests
-├── example_integration.py   # Demo with camera
 └── README.md               # This file
 ```
 

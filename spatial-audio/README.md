@@ -33,7 +33,7 @@ pip install PyOpenAL
 
 ```bash
 # Activate virtual environment (required!)
-cd /Users/alisonsoong/Desktop/Project-Daredevil
+cd ../Project-Daredevil
 source env/bin/activate
 
 # Install OpenAL

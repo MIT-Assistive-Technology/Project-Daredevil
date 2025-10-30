@@ -12,13 +12,13 @@
 ### Option B: Configurable Launch
 ```bash
 # Use default settings
-./launch.sh
+./main.sh
 
 # Customize settings
-./launch.sh --camera 0 --classes person bottle cup --volume 0.2 --confidence 0.4
+./main.sh --camera 0 --classes person bottle cup --volume 0.3 --confidence 0.4
 
 # Show help
-./launch.sh --help
+./main.sh --help
 ```
 
 ### Option C: Web Interface (Most User-Friendly)
@@ -37,11 +37,11 @@
 ### Option 1: Individual Scripts (Simplest)
 
 ```bash
-# Run full integration test (Detection + Depth + Spatial Audio)
-./run_full_test.sh
+# Run full integration (Detection + Depth + Spatial Audio)
+source env/bin/activate && python3 main.py
 
 # Run detection depth integration with specific args
-./run_detection_depth.sh --camera 0 --verbose --classes person bottle --confidence 0.3
+source env/bin/activate && python3 detection_depth_integration.py --camera 0 --verbose --classes person bottle --confidence 0.3
 ```
 
 ### Option 2: Unified Script
@@ -68,13 +68,13 @@ Use the `run_tests.sh` script for easy testing:
 
 ```bash
 # Default
-source env/bin/activate && python3 test_full_integration.py
+source env/bin/activate && python3 main.py
 
 # Use camera 1
-source env/bin/activate && python3 test_full_integration.py --camera 1
+source env/bin/activate && python3 main.py --camera 1
 
 # Use camera 1 with custom classes and volume
-source env/bin/activate && python3 test_full_integration.py --camera 1 --classes person bottle --volume 0.1 --confidence 0.3
+source env/bin/activate && python3 main.py --camera 1 --classes person bottle --volume 0.3 --confidence 0.3
 ```
 
 ### Detection + Depth Only (No Audio)
