@@ -24,7 +24,7 @@ Usage:
 
 from .depth_processor import DepthProcessor, create_depth_processor, process_frame_depth
 from .enhanced_depth_processor import (
-    EnhancedDepthProcessor, 
+    EnhancedDepthProcessor,
     create_enhanced_depth_processor,
     DepthQualityMetrics,
     SpatialAudioMetrics,
@@ -34,13 +34,13 @@ from .enhanced_depth_processor import (
     DepthQualityAssessor,
     SpatialContextAnalyzer,
     DepthLayer,
-    MovementDirection
+    MovementDirection,
 )
 from .enhanced_depth_processor_with_persistence import (
     EnhancedDepthProcessorWithPersistence,
     create_enhanced_depth_processor_with_persistence,
     PersistenceConfig,
-    ObjectState
+    ObjectState,
 )
 
 from .depth_stream import HFDepthEstimator, DepthStream
@@ -48,6 +48,7 @@ from .depth_stream import HFDepthEstimator, DepthStream
 # Import detection + depth integration components
 try:
     from .detection_depth_stream import DetectionDepthStream
+
     _DETECTION_AVAILABLE = True
 except ImportError:
     DetectionDepthStream = None
