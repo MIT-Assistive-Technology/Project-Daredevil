@@ -127,13 +127,13 @@ class DepthProcessor:
                 outputs, target_sizes=[(frame_rgb.shape[0], frame_rgb.shape[1])]
             )
             depth = post[0]["predicted_depth"].detach().cpu().numpy().astype(np.float32)
-            
+
             # Convert to meters (DPT outputs in different units)
             depth = depth / 1000.0  # Convert to meters
         except AttributeError:
             # Fallback for newer transformers versions
             depth = outputs.predicted_depth.detach().cpu().numpy().astype(np.float32)
-            
+
             # Handle different depth map formats
             if len(depth.shape) == 3:
                 # If 3D, take the first channel or average across channels
@@ -141,10 +141,14 @@ class DepthProcessor:
                     depth = np.mean(depth, axis=2)
                 else:
                     depth = depth[:, :, 0]
-            
+
             # Resize to original frame size
-            depth = cv2.resize(depth, (frame_rgb.shape[1], frame_rgb.shape[0]), interpolation=cv2.INTER_LINEAR)
-            
+            depth = cv2.resize(
+                depth,
+                (frame_rgb.shape[1], frame_rgb.shape[0]),
+                interpolation=cv2.INTER_LINEAR,
+            )
+
             # Convert to meters (DPT outputs in different units)
             depth = depth / 1000.0  # Convert to meters
 
@@ -301,9 +305,9 @@ class DepthProcessor:
         valid_depth = roi_depth[np.isfinite(roi_depth)]
 
         roi_stats = {
-            "mean": float(np.mean(valid_depth))
-            if valid_depth.size > 0
-            else float("nan"),
+            "mean": (
+                float(np.mean(valid_depth)) if valid_depth.size > 0 else float("nan")
+            ),
             "std": float(np.std(valid_depth)) if valid_depth.size > 0 else float("nan"),
             "min": float(np.min(valid_depth)) if valid_depth.size > 0 else float("nan"),
             "max": float(np.max(valid_depth)) if valid_depth.size > 0 else float("nan"),

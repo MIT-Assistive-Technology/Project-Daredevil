@@ -25,10 +25,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from camera import CameraStream, create_phone_camera_stream
 from depth import (
-    EnhancedDepthProcessor, 
+    EnhancedDepthProcessor,
     create_enhanced_depth_processor,
     DepthLayer,
-    MovementDirection
+    MovementDirection,
 )
 
 
@@ -113,7 +113,7 @@ class EnhancedDepthDemo:
         for detection in detections:
             bbox = detection["bbox"]
             object_class = detection["class"]
-            
+
             # Generate unique object ID
             object_id = f"{object_class}_{self.object_counter}"
             self.object_counter += 1
@@ -131,7 +131,9 @@ class EnhancedDepthDemo:
 
         return processed_detections
 
-    def _draw_enhanced_detections(self, frame: np.ndarray, detections: List[Dict[str, Any]]):
+    def _draw_enhanced_detections(
+        self, frame: np.ndarray, detections: List[Dict[str, Any]]
+    ):
         """Draw detections with enhanced depth information on frame."""
         for i, detection in enumerate(detections):
             bbox = detection["bbox"]
@@ -140,10 +142,10 @@ class EnhancedDepthDemo:
             # Choose color based on depth layer
             depth_layer = detection.get("depth_layer", "medium")
             layer_colors = {
-                "very_close": (0, 0, 255),    # Red - urgent
-                "close": (0, 165, 255),        # Orange - warning
-                "medium": (0, 255, 0),        # Green - normal
-                "far": (128, 128, 128)        # Gray - background
+                "very_close": (0, 0, 255),  # Red - urgent
+                "close": (0, 165, 255),  # Orange - warning
+                "medium": (0, 255, 0),  # Green - normal
+                "far": (128, 128, 128),  # Gray - background
             }
             color = layer_colors.get(depth_layer, (0, 255, 0))
 
@@ -168,13 +170,25 @@ class EnhancedDepthDemo:
             # Depth information
             depth_text = f"D: {raw_depth:.2f}m ({depth_layer})"
             cv2.putText(
-                frame, depth_text, (x1, y1 - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1
+                frame,
+                depth_text,
+                (x1, y1 - 40),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                color,
+                1,
             )
 
             # Quality and audio info
             quality_text = f"Q: {quality_confidence:.2f} | A: {audio_priority}"
             cv2.putText(
-                frame, quality_text, (x1, y1 - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1
+                frame,
+                quality_text,
+                (x1, y1 - 20),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.4,
+                color,
+                1,
             )
 
             # Movement information
@@ -182,10 +196,18 @@ class EnhancedDepthDemo:
             movement_velocity = detection.get("movement_velocity", 0)
             movement_text = f"M: {movement_direction} ({movement_velocity:.2f})"
             cv2.putText(
-                frame, movement_text, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1
+                frame,
+                movement_text,
+                (x1, y1 - 5),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.4,
+                color,
+                1,
             )
 
-    def _display_enhanced_stats(self, frame: np.ndarray, detections: List[Dict[str, Any]]):
+    def _display_enhanced_stats(
+        self, frame: np.ndarray, detections: List[Dict[str, Any]]
+    ):
         """Display enhanced detection and depth statistics."""
         y_offset = 30
 
@@ -197,8 +219,15 @@ class EnhancedDepthDemo:
                 break
 
         if reference_depth is not None:
-            cv2.putText(frame, f"Background: {reference_depth:.2f}m", 
-                       (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+            cv2.putText(
+                frame,
+                f"Background: {reference_depth:.2f}m",
+                (10, y_offset),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (0, 255, 255),
+                2,
+            )
             y_offset += 25
 
         # Display depth layer distribution
@@ -207,29 +236,61 @@ class EnhancedDepthDemo:
             layer = detection.get("depth_layer", "unknown")
             layer_counts[layer] = layer_counts.get(layer, 0) + 1
 
-        cv2.putText(frame, "Depth Layers:", (10, y_offset), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        cv2.putText(
+            frame,
+            "Depth Layers:",
+            (10, y_offset),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (255, 255, 255),
+            2,
+        )
         y_offset += 25
 
         for layer, count in layer_counts.items():
-            cv2.putText(frame, f"  {layer}: {count}", 
-                       (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            cv2.putText(
+                frame,
+                f"  {layer}: {count}",
+                (10, y_offset),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255, 255, 255),
+                1,
+            )
             y_offset += 20
 
         # Display audio priorities
-        audio_priorities = [d.get("spatial_audio", {}).audio_priority for d in detections]
+        audio_priorities = [
+            d.get("spatial_audio", {}).audio_priority for d in detections
+        ]
         if audio_priorities:
             avg_priority = np.mean(audio_priorities)
-            cv2.putText(frame, f"Avg Audio Priority: {avg_priority:.1f}", 
-                       (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            cv2.putText(
+                frame,
+                f"Avg Audio Priority: {avg_priority:.1f}",
+                (10, y_offset),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255, 255, 255),
+                1,
+            )
             y_offset += 20
 
         # Display quality metrics
-        quality_scores = [d.get("quality_metrics", {}).overall_confidence for d in detections]
+        quality_scores = [
+            d.get("quality_metrics", {}).overall_confidence for d in detections
+        ]
         if quality_scores:
             avg_quality = np.mean(quality_scores)
-            cv2.putText(frame, f"Avg Quality: {avg_quality:.3f}", 
-                       (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            cv2.putText(
+                frame,
+                f"Avg Quality: {avg_quality:.3f}",
+                (10, y_offset),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255, 255, 255),
+                1,
+            )
             y_offset += 20
 
         # Display individual detection details (limit to 3)
@@ -240,8 +301,15 @@ class EnhancedDepthDemo:
             quality = detection.get("quality_metrics", {}).overall_confidence
 
             text = f"#{i+1} {class_name}: {depth_layer}, P:{audio_priority}, Q:{quality:.2f}"
-            cv2.putText(frame, text, (10, y_offset), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+            cv2.putText(
+                frame,
+                text,
+                (10, y_offset),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.4,
+                (255, 255, 255),
+                1,
+            )
             y_offset += 20
 
     def _calculate_fps(self) -> float:
@@ -298,7 +366,9 @@ class EnhancedDepthDemo:
 
                 # Show spatial context if requested
                 if show_context and detections:
-                    context = self.depth_processor.get_spatial_context(frame, detections)
+                    context = self.depth_processor.get_spatial_context(
+                        frame, detections
+                    )
                     self._display_spatial_context(frame, context)
 
                 # Add FPS and info
@@ -344,31 +414,55 @@ class EnhancedDepthDemo:
 
         # Scene type
         scene_type = context.get("scene_type", "unknown")
-        cv2.putText(frame, f"Scene: {scene_type}", 
-                   (frame.shape[1] - 200, y_offset), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+        cv2.putText(
+            frame,
+            f"Scene: {scene_type}",
+            (frame.shape[1] - 200, y_offset),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 255, 255),
+            1,
+        )
         y_offset += 20
 
         # Spatial density
         density = context.get("spatial_density", 0)
-        cv2.putText(frame, f"Density: {density:.3f}", 
-                   (frame.shape[1] - 200, y_offset), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+        cv2.putText(
+            frame,
+            f"Density: {density:.3f}",
+            (frame.shape[1] - 200, y_offset),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 255, 255),
+            1,
+        )
         y_offset += 20
 
         # Movement patterns
         movement_patterns = context.get("movement_patterns", {})
         approaching = len(movement_patterns.get("approaching_objects", []))
         receding = len(movement_patterns.get("receding_objects", []))
-        
-        cv2.putText(frame, f"Approaching: {approaching}", 
-                   (frame.shape[1] - 200, y_offset), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+
+        cv2.putText(
+            frame,
+            f"Approaching: {approaching}",
+            (frame.shape[1] - 200, y_offset),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 255, 0),
+            1,
+        )
         y_offset += 20
-        
-        cv2.putText(frame, f"Receding: {receding}", 
-                   (frame.shape[1] - 200, y_offset), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+
+        cv2.putText(
+            frame,
+            f"Receding: {receding}",
+            (frame.shape[1] - 200, y_offset),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 0, 255),
+            1,
+        )
 
     def _save_snapshot(self, frame: np.ndarray):
         """Save current frame as snapshot."""
@@ -404,6 +498,7 @@ def main():
     except Exception as e:
         print(f"Demo failed: {e}")
         import traceback
+
         traceback.print_exc()
 
 

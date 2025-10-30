@@ -213,20 +213,20 @@ def list_available_cameras() -> List[int]:
 def create_phone_camera_stream() -> Optional[CameraStream]:
     """
     Create a camera stream for external cameras (including phones via Continuity Camera).
-    
+
     This function tries to find external cameras:
     1. Continuity Camera (iPhone connected via USB/WiFi)
     2. External USB cameras
     3. Any camera that's not the built-in laptop camera
-    
+
     Returns:
         CameraStream instance or None if no external camera found
     """
     logger.info("Looking for external camera (phone or USB)...")
-    
+
     # Try external camera indices (built-in is usually 0)
     external_camera_indices = [1, 2, 3, 4]
-    
+
     for idx in external_camera_indices:
         try:
             cap = cv2.VideoCapture(idx)
@@ -239,7 +239,7 @@ def create_phone_camera_stream() -> Optional[CameraStream]:
                 cap.release()
         except Exception as e:
             logger.debug(f"Camera {idx} failed: {e}")
-    
+
     logger.warning("No external camera detected")
     return None
 
