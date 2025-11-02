@@ -4,6 +4,8 @@
 
 A computer vision and spatial audio system that combines object detection, monocular depth estimation, and spatial audio processing to create an immersive audio experience based on detected objects in the camera view. Project Daredevil explores how consumer devices (iPhone, AirPods, webcams) can provide affordable, real-time spatial audio feedback to blind and low-vision users.
 
+## [Design Review Slides](https://docs.google.com/presentation/d/1qIadIwMdu863MYsWHZKzjytCuk-a4r40REGFNMkRoNw/edit?usp=sharing)
+
 ## Overview
 
 Our goal is to create a proof-of-concept system that translates depth perception into sound—like digital echolocation—to enhance spatial awareness in everyday environments.
