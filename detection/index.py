@@ -2,7 +2,7 @@ import cv2
 from ultralytics import YOLO
 
 model = YOLO('yolov8n.pt')  # Load pretrained YOLOv8 model
-target_class = 'bottle'      # The object you want to detect
+target_class = 'person'      # The object you want to detect
 
 cap = cv2.VideoCapture(0)
 
