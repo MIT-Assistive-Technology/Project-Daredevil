@@ -229,13 +229,20 @@ def index():
 def start_system():
     global active_process, process_status
 
+    print("\n" + "=" * 60)
+    print("DEBUG: /start endpoint called")
+    print("=" * 60)
+
     if process_status["running"]:
+        print("DEBUG: System is already running, rejecting start request")
         return jsonify({"success": False, "message": "System is already running!"})
 
     camera = request.form.get("camera", "1")
     classes = request.form.get("classes", "person bottle")
     volume = request.form.get("volume", "0.1")
     confidence = request.form.get("confidence", "0.3")
+
+    print(f"DEBUG: Configuration - camera={camera}, classes={classes}, volume={volume}, confidence={confidence}")
 
     # Build command
     venv_python = os.path.join(os.path.dirname(__file__), "env", "bin", "python3")
@@ -245,21 +252,35 @@ def start_system():
         + ["--volume", volume, "--confidence", confidence]
     )
 
+    print(f"DEBUG: Command to execute: {' '.join(cmd)}")
+    print(f"DEBUG: venv_python path: {venv_python}")
+    print(f"DEBUG: venv_python exists: {os.path.exists(venv_python)}")
+    print(f"DEBUG: main.py exists: {os.path.exists('main.py')}")
+
     try:
         # Start process
+        print("DEBUG: Starting subprocess...")
         active_process = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, cwd=os.path.dirname(__file__)
         )
+        print(f"DEBUG: Process started with PID: {active_process.pid}")
+        print(f"DEBUG: Process poll() result: {active_process.poll()}")
+        
         process_status["running"] = True
         process_status["output"] = []
 
         # Start output monitoring thread
+        print("DEBUG: Starting monitor thread...")
         threading.Thread(
             target=monitor_process, args=(active_process,), daemon=True
         ).start()
 
+        print("DEBUG: System started successfully")
         return jsonify({"success": True, "message": "System started successfully"})
     except Exception as e:
+        print(f"ERROR: Failed to start system: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"success": False, "message": str(e)})
 
 
@@ -267,43 +288,72 @@ def start_system():
 def stop_system():
     global active_process, process_status
 
+    print("\n" + "=" * 60)
+    print("DEBUG: /stop endpoint called")
+    print("=" * 60)
+
     if not process_status["running"]:
+        print("DEBUG: System is not running, nothing to stop")
         return jsonify({"message": "System is not running"})
 
     try:
-        if active_process and active_process.poll() is None:
-            import signal
-            import time
+        if active_process:
+            poll_result = active_process.poll()
+            print(f"DEBUG: active_process exists, PID: {active_process.pid}")
+            print(f"DEBUG: Process poll() result: {poll_result} (None = running, number = exit code)")
+            
+            if poll_result is None:
+                print("DEBUG: Process is still running, attempting to terminate...")
+                import signal
+                import time
 
-            # First, try to gracefully terminate
-            active_process.terminate()
-
-            try:
-                # Wait up to 2 seconds for graceful shutdown
-                active_process.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                # If it didn't stop, forcefully kill it
-                active_process.kill()
-                active_process.wait(timeout=1)
-
-            # Kill any child processes that might be holding the camera
-            try:
-                import psutil
+                # First, try to gracefully terminate
+                print("DEBUG: Sending SIGTERM to process...")
+                active_process.terminate()
 
                 try:
-                    parent = psutil.Process(active_process.pid)
-                    for child in parent.children(recursive=True):
-                        child.kill()
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    pass
-            except ImportError:
-                pass  # psutil not available, skip child process killing
+                    # Wait up to 2 seconds for graceful shutdown
+                    print("DEBUG: Waiting for graceful shutdown (max 2 seconds)...")
+                    active_process.wait(timeout=2)
+                    print("DEBUG: Process terminated gracefully")
+                except subprocess.TimeoutExpired:
+                    # If it didn't stop, forcefully kill it
+                    print("DEBUG: Process didn't terminate, forcing kill...")
+                    active_process.kill()
+                    active_process.wait(timeout=1)
+                    print("DEBUG: Process killed forcefully")
+
+                # Kill any child processes that might be holding the camera
+                try:
+                    import psutil
+
+                    try:
+                        print("DEBUG: Attempting to kill child processes...")
+                        parent = psutil.Process(active_process.pid)
+                        children = parent.children(recursive=True)
+                        print(f"DEBUG: Found {len(children)} child processes")
+                        for child in children:
+                            print(f"DEBUG: Killing child process PID: {child.pid}")
+                            child.kill()
+                        print("DEBUG: All child processes killed")
+                    except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+                        print(f"DEBUG: Could not kill child processes: {e}")
+                except ImportError:
+                    print("DEBUG: psutil not available, skipping child process killing")
+            else:
+                print(f"DEBUG: Process already exited with code: {poll_result}")
+        else:
+            print("DEBUG: active_process is None")
 
         # Always update status even if process was None or already dead
         process_status["running"] = False
         active_process = None
+        print("DEBUG: Status updated to stopped")
         return jsonify({"message": "System stopped successfully"})
     except Exception as e:
+        print(f"ERROR: Exception during stop: {e}")
+        import traceback
+        traceback.print_exc()
         process_status["running"] = False
         active_process = None
         return jsonify({"message": f"System stopped (with errors: {str(e)})"})
@@ -311,26 +361,64 @@ def stop_system():
 
 @app.route("/status")
 def status():
+    global active_process, process_status
+    
+    # Check if process is actually still running
+    if active_process:
+        poll_result = active_process.poll()
+        if poll_result is not None:
+            # Process has exited
+            if process_status["running"]:
+                print(f"DEBUG: Process status check - process exited with code {poll_result}, but status still shows running!")
+                print(f"DEBUG: Updating status to stopped")
+                process_status["running"] = False
+                process_status["output"].append(f"Process exited with code {poll_result}.")
+        else:
+            # Process is still running
+            if not process_status["running"]:
+                print(f"DEBUG: Process status check - process is running (poll=None), but status shows stopped!")
+    
     return jsonify(process_status)
 
 
 def monitor_process(process):
     """Monitor process output"""
     global process_status
+    print(f"DEBUG: Monitor thread started for PID: {process.pid}")
     try:
         for line in iter(process.stdout.readline, ""):
             if line:
-                process_status["output"].append(line)
-                # Keep only last 100 lines
-                if len(process_status["output"]) > 100:
-                    process_status["output"] = process_status["output"][-100:]
-        process.wait()
-    except Exception:
-        pass  # Process was terminated
+                line = line.strip()
+                if line:  # Only add non-empty lines
+                    process_status["output"].append(line)
+                    print(f"DEBUG: [Process Output] {line}")
+                    # Keep only last 100 lines
+                    if len(process_status["output"]) > 100:
+                        process_status["output"] = process_status["output"][-100:]
+        
+        # If we exit the loop, process has finished
+        print(f"DEBUG: Process stdout closed, waiting for process to exit...")
+        return_code = process.wait()
+        print(f"DEBUG: Process exited with return code: {return_code}")
+        print(f"DEBUG: Process poll() now returns: {process.poll()}")
+        
+    except Exception as e:
+        print(f"DEBUG: Exception in monitor_process: {e}")
+        import traceback
+        traceback.print_exc()
+        try:
+            return_code = process.poll()
+            print(f"DEBUG: Process poll() after exception: {return_code}")
+        except:
+            pass
     finally:
         # Always mark as not running when monitor exits
+        print(f"DEBUG: Monitor thread exiting, marking system as stopped")
+        print(f"DEBUG: Process status before update: running={process_status['running']}")
         process_status["running"] = False
         process_status["output"].append("Process terminated.")
+        print(f"DEBUG: Process status after update: running={process_status['running']}")
+        print("=" * 60)
 
 
 if __name__ == "__main__":

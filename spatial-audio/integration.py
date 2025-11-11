@@ -12,6 +12,7 @@ Usage:
 import sys
 import os
 import time
+import numpy as np
 from typing import List, Dict, Any
 
 # Add paths for imports
@@ -91,12 +92,98 @@ class IntegratedSpatialAudioSystem:
             master_volume=master_volume,
             min_volume=0.02,  # Very quiet when no objects detected
             max_volume=0.3,  # Louder for close objects
+            debug=verbose,  # Enable debug mode if verbose
         )
 
         # Track objects for audio
         self.tracked_objects: Dict[str, dict] = {}
 
         print("Integrated Spatial Audio System initialized")
+
+    def _sample_background_depth(
+        self, depth_map: np.ndarray, frame: np.ndarray, detections: List[Dict[str, Any]]
+    ) -> List[Dict[str, float]]:
+        """
+        Sample depth map for background areas (excluding detected object regions).
+        
+        Args:
+            depth_map: Depth map from depth processor
+            frame: Current frame (for dimensions)
+            detections: List of detected objects with bounding boxes
+            
+        Returns:
+            List of depth samples with x, y, depth normalized to [0, 1]
+        """
+        if depth_map is None or depth_map.size == 0:
+            return []
+        
+        h, w = depth_map.shape[:2] if len(depth_map.shape) >= 2 else (frame.shape[0], frame.shape[1])
+        
+        # Create mask for detected object regions
+        object_mask = np.zeros((h, w), dtype=bool)
+        
+        for det in detections:
+            bbox = det.get("bbox", [])
+            if len(bbox) >= 4:
+                x1, y1, x2, y2 = map(int, bbox[:4])
+                # Clamp to image bounds
+                x1 = max(0, min(x1, w - 1))
+                y1 = max(0, min(y1, h - 1))
+                x2 = max(0, min(x2, w - 1))
+                y2 = max(0, min(y2, h - 1))
+                object_mask[y1:y2, x1:x2] = True
+        
+        # Sample points from background (non-object areas)
+        # Use a grid-based sampling to get spatial distribution
+        grid_size = 4  # Sample every 4th pixel in a grid
+        samples = []
+        
+        # Get depth values - depth map should be 2D array from depth processor
+        # If it's 3D (colorized), we need the raw depth map
+        # For now, assume we get the raw depth map (2D)
+        if depth_map.ndim == 3:
+            # If we got a colorized depth map, extract a single channel as approximation
+            # Note: This is not ideal - ideally we'd get the raw depth map
+            depth_gray = depth_map[:, :, 0].astype(np.float32)
+        else:
+            depth_gray = depth_map.astype(np.float32)
+        
+        # Get valid depth values (not NaN, not inf)
+        valid_depth = np.isfinite(depth_gray)
+        
+        # Normalize depth to [0, 1] range
+        depth_min = np.nanmin(depth_gray[valid_depth])
+        depth_max = np.nanmax(depth_gray[valid_depth])
+        depth_range = depth_max - depth_min
+        if depth_range > 0:
+            depth_normalized = (depth_gray - depth_min) / depth_range
+        else:
+            depth_normalized = np.full_like(depth_gray, 0.5, dtype=np.float32)
+        
+        # Sample grid points from background areas
+        for y in range(0, h, grid_size * 2):  # Larger step for fewer samples
+            for x in range(0, w, grid_size * 2):
+                if y < h and x < w:
+                    # Check if this point is in background (not in object mask)
+                    if not object_mask[y, x] and valid_depth[y, x]:
+                        depth_val = float(depth_normalized[y, x])
+                        # Normalize position to [0, 1]
+                        x_norm = x / w
+                        y_norm = y / h
+                        samples.append({
+                            "x": x_norm,
+                            "y": y_norm,
+                            "depth": depth_val,
+                        })
+        
+        # Limit number of samples to avoid overwhelming
+        max_samples = 8
+        if len(samples) > max_samples:
+            # Sample evenly
+            step = len(samples) // max_samples
+            samples = samples[::step][:max_samples]
+        
+        return samples
 
     def _convert_detection_to_audio(
         self, depth_result: Dict[str, Any]
@@ -163,6 +250,7 @@ class IntegratedSpatialAudioSystem:
                 depth=audio_params["depth"],
                 volume=audio_params["volume"],
                 active=True,
+                class_name=audio_params["class"],
             )
 
             # Store for tracking
@@ -254,6 +342,13 @@ class IntegratedSpatialAudioSystem:
                             frame, detections
                         )
                         self._update_spatial_audio(depth_results)
+                    
+                    # Sample background depth for ambient noise (areas without detected objects)
+                    background_samples = self._sample_background_depth(
+                        depth_map, frame, detections
+                    )
+                    if background_samples:
+                        self.audio_engine.update_background_depth(background_samples)
 
                     # Create display frames
                     rgb_display = frame.copy()
