@@ -66,9 +66,17 @@ class SimpleSpatialAudio:
         return noise_int16
 
     def _screen_to_pan(self, x, y, depth):
-        """Convert screen position to stereo pan"""
+        """Convert screen position to stereo pan, limited to the front of the camera."""
+        # Ensure inputs are within the front of the camera's view
+        if depth < 0.0 or depth > 1.0:
+            raise ValueError("Depth must be between 0.0 (close) and 1.0 (far).")
+        if x < 0.0 or x > 1.0:
+            raise ValueError("X must be between 0.0 (left) and 1.0 (right).")
+        if y < 0.0 or y > 1.0:
+            raise ValueError("Y must be between 0.0 (top) and 1.0 (bottom).")
+
         # X position controls left/right panning (-1.0 to 1.0)
-        pan = (x - 0.5) * 2.0  # 0.0-1.0 -> -1.0 to 1.0
+        pan = (x - 0.5) * 2.0  # Normalize x to range -1.0 to 1.0
 
         # Depth controls volume (closer = louder, farther = quieter)
         # depth 0.0 = close (loud), 1.0 = far (very quiet)
@@ -120,12 +128,12 @@ class SimpleSpatialAudio:
         pitch_hz = 300 + (500 - 300) * (1.0 - depth)
         return pitch_hz
 
-    def _y_to_pitch_modulation(self, y):
-        """Convert Y position to vertical pitch shift (up = slightly higher pitch)"""
-        # y 0.0 (top) -> slightly higher pitch
-        # y 1.0 (bottom) -> slightly lower pitch
-        # Very subtle - maybe 50 Hz range
-        pitch_offset = 50 * (0.5 - y)  # Center (0.5) = no offset
+    def _angle_to_pitch_modulation(self, angle):
+        """Convert horizontal angle to pitch shift (left = lower pitch, right = higher pitch)"""
+        # angle -90 (far left) -> lower pitch
+        # angle 90 (far right) -> higher pitch
+        # Center (0) = no offset, range is subtle (e.g., 50 Hz)
+        pitch_offset = 50 * (angle / 90)  # Normalize angle to range [-1, 1]
         return pitch_offset
 
     def update_object(self, object_id, x, y, depth, volume=None, active=True):
@@ -172,7 +180,7 @@ class SimpleSpatialAudio:
             obj_data["x"], obj_data["y"], obj_data["depth"]
         )
         base_pitch = self._depth_to_pitch(obj_data["depth"])
-        y_pitch_offset = self._y_to_pitch_modulation(obj_data["y"])
+        y_pitch_offset = self._angle_to_pitch_modulation(obj_data["y"])
         final_pitch = base_pitch + y_pitch_offset
 
         # Calculate dynamic volume based on distance and number of objects
