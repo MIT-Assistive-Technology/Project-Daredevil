@@ -34,73 +34,73 @@ def generate_filtered_noise(
     bandwidth: float = 500.0,
 ) -> np.ndarray:
     """
-    Generate bandpass-filtered white noise centered at a specific frequency.
+    Generate band-limited brown noise (smooth ocean-like sound).
+
+    Brown noise has a 6 dB/octave slope and is generated using cumulative sum
+    of uniform random numbers, then band-limited with high-pass at 20 Hz and
+    low-pass at 40 Hz to prevent system overload.
 
     Args:
         duration_s: Duration in seconds
         sample_rate: Audio sample rate
-        center_freq: Center frequency in Hz
-        bandwidth: Bandwidth in Hz
+        center_freq: (Unused, kept for compatibility)
+        bandwidth: (Unused, kept for compatibility)
 
     Returns:
-        Filtered noise as 1D numpy array
+        Band-limited brown noise as 1D numpy array
     """
     n = int(duration_s * sample_rate)
-    noise = np.random.normal(0, 0.15, size=(n,)).astype(np.float32)
-
+    
+    # Generate brown noise using cumulative sum method
+    # Step 1: Create zero-mean uniformly distributed random numbers [-1, 1]
+    uniform_random = 2.0 * np.random.rand(n).astype(np.float32) - 1.0
+    
+    # Step 2: Cumulative sum with scaling factor
+    # Scale factor 'c' controls the amplitude - adjust to prevent overflow
+    c = 0.01  # Scaling factor to keep amplitude reasonable
+    brown_noise = np.zeros(n, dtype=np.float32)
+    brown_noise[0] = c * uniform_random[0]
+    for i in range(1, n):
+        brown_noise[i] = brown_noise[i - 1] + c * uniform_random[i]
+    
+    # Remove DC offset
+    brown_noise = brown_noise - np.mean(brown_noise)
+    
+    # Step 3: Apply band-limiting filters
+    # High-pass filter at 20 Hz (first-order)
+    hp_cutoff = 20.0
+    alpha_hp = 1.0 / (1.0 + 2.0 * np.pi * hp_cutoff / sample_rate)
+    hp_filtered = np.zeros_like(brown_noise)
+    hp_filtered[0] = brown_noise[0]
+    for i in range(1, n):
+        hp_filtered[i] = alpha_hp * (
+            hp_filtered[i - 1] + brown_noise[i] - brown_noise[i - 1]
+        )
+    
+    # Low-pass filter at 40 Hz (first-order)
+    lp_cutoff = 40.0
+    alpha_lp = 2.0 * np.pi * lp_cutoff / sample_rate
+    alpha_lp = alpha_lp / (1.0 + alpha_lp)
+    lp_filtered = np.zeros_like(hp_filtered)
+    lp_filtered[0] = hp_filtered[0]
+    for i in range(1, n):
+        lp_filtered[i] = alpha_lp * hp_filtered[i] + (1.0 - alpha_lp) * lp_filtered[i - 1]
+    
+    filtered = lp_filtered
+    
     # Apply window to prevent clicks at boundaries
     fade_samples = min(int(0.01 * sample_rate), n // 10)  # 10ms fade or 10% of length
     if fade_samples > 0:
         fade_in = np.linspace(0, 1, fade_samples)
         fade_out = np.linspace(1, 0, fade_samples)
-        noise[:fade_samples] *= fade_in
-        noise[-fade_samples:] *= fade_out
-
-    # FFT filtering to create bandpass
-    X = np.fft.rfft(noise)
-    freqs = np.fft.rfftfreq(n, 1 / sample_rate)
-
-    # Bandpass filter: only keep frequencies around center_freq ± bandwidth
-    low_cutoff = max(20, center_freq - bandwidth)  # High-pass at 20Hz to remove DC
-    high_cutoff = min(sample_rate / 2 - 100, center_freq + bandwidth)  # Leave headroom
-
-    # Create frequency mask
-    mask = np.zeros_like(freqs)
-    mask[(freqs >= low_cutoff) & (freqs <= high_cutoff)] = 1.0
-
-    # Apply Gaussian rolloff for smoother filtering
-    for i, f in enumerate(freqs):
-        if f < low_cutoff or f > high_cutoff:
-            dist = min(abs(f - low_cutoff), abs(f - high_cutoff))
-            mask[i] = np.exp(-((dist / (bandwidth * 0.3)) ** 2))
-
-    # Zero out DC component to prevent clicks
-    if len(freqs) > 0:
-        mask[0] = 0.0
-
-    X = X * mask
-    filtered = np.fft.irfft(X, n=n).astype(np.float32)
-
-    # Remove DC offset
-    filtered = filtered - np.mean(filtered)
-
-    # Apply gentle high-pass filter to remove any remaining low-frequency artifacts
-    # Simple first-order high-pass at ~30Hz
-    if len(filtered) > 1:
-        alpha = 1.0 / (1.0 + 2.0 * np.pi * 30.0 / sample_rate)
-        hp_filtered = np.zeros_like(filtered)
-        hp_filtered[0] = filtered[0]
-        for i in range(1, len(filtered)):
-            hp_filtered[i] = alpha * (
-                hp_filtered[i - 1] + filtered[i] - filtered[i - 1]
-            )
-        filtered = hp_filtered
-
-    # Re-apply window after filtering to ensure smooth boundaries
-    if fade_samples > 0:
         filtered[:fade_samples] *= fade_in
         filtered[-fade_samples:] *= fade_out
-
+    
+    # Normalize to reasonable amplitude
+    peak = np.max(np.abs(filtered))
+    if peak > 0:
+        filtered = filtered / peak * 0.3  # Scale to reasonable level
+    
     return filtered
 
 
@@ -521,11 +521,45 @@ def generate_continuous_spatial_audio(
     # Create a map of frame_idx to results for quick lookup
     frame_map = {r.get("frame_idx", 0): r for r in sorted_results}
 
-    # Generate ONE continuous white noise stream for the entire video
+    # Generate ONE continuous brown noise stream for the entire video
     # This ensures smooth, continuous audio without discontinuities
-    continuous_noise = np.random.normal(0, 0.15, size=(total_samples,)).astype(
-        np.float32
-    )
+    # Brown noise: cumulative sum of uniform random numbers
+    uniform_random = 2.0 * np.random.rand(total_samples).astype(np.float32) - 1.0
+    c = 0.01  # Scaling factor
+    continuous_noise = np.zeros(total_samples, dtype=np.float32)
+    continuous_noise[0] = c * uniform_random[0]
+    for i in range(1, total_samples):
+        continuous_noise[i] = continuous_noise[i - 1] + c * uniform_random[i]
+    
+    # Remove DC offset
+    continuous_noise = continuous_noise - np.mean(continuous_noise)
+    
+    # Apply band-limiting filters (high-pass at 20 Hz, low-pass at 40 Hz)
+    # High-pass filter at 20 Hz
+    hp_cutoff = 20.0
+    alpha_hp = 1.0 / (1.0 + 2.0 * np.pi * hp_cutoff / sample_rate)
+    hp_filtered = np.zeros_like(continuous_noise)
+    hp_filtered[0] = continuous_noise[0]
+    for i in range(1, total_samples):
+        hp_filtered[i] = alpha_hp * (
+            hp_filtered[i - 1] + continuous_noise[i] - continuous_noise[i - 1]
+        )
+    
+    # Low-pass filter at 40 Hz
+    lp_cutoff = 40.0
+    alpha_lp = 2.0 * np.pi * lp_cutoff / sample_rate
+    alpha_lp = alpha_lp / (1.0 + alpha_lp)
+    lp_filtered = np.zeros_like(hp_filtered)
+    lp_filtered[0] = hp_filtered[0]
+    for i in range(1, total_samples):
+        lp_filtered[i] = alpha_lp * hp_filtered[i] + (1.0 - alpha_lp) * lp_filtered[i - 1]
+    
+    continuous_noise = lp_filtered
+    
+    # Normalize to reasonable amplitude
+    peak = np.max(np.abs(continuous_noise))
+    if peak > 0:
+        continuous_noise = continuous_noise / peak * 0.3
 
     # Apply window to prevent clicks at boundaries
     fade_samples = int(0.01 * sample_rate)  # 10ms fade
@@ -577,34 +611,13 @@ def generate_continuous_spatial_audio(
         az = azimuths_deg[0] if len(azimuths_deg) > 0 else 0.0
 
         # Calculate parameters
-        center_freq = depth_to_frequency(depth_norm)
-        bandwidth = 150 + (depth_norm * 150)
+        # Note: Brown noise is already band-limited (20-40 Hz), so we just apply
+        # gain and panning based on depth/azimuth
         pan = azimuth_to_pan(az)
         gain = depth_to_gain(depth_norm) * 1.5
 
-        # Apply bandpass filter to window
-        X = np.fft.rfft(window_noise)
-        freqs = np.fft.rfftfreq(len(window_noise), 1 / sample_rate)
-
-        # Create bandpass mask
-        low_cutoff = max(20, center_freq - bandwidth)
-        high_cutoff = min(sample_rate / 2 - 100, center_freq + bandwidth)
-
-        mask = np.ones_like(freqs)
-        for i, f in enumerate(freqs):
-            if f < low_cutoff or f > high_cutoff:
-                dist = min(abs(f - low_cutoff), abs(f - high_cutoff))
-                mask[i] = np.exp(-((dist / (bandwidth * 0.3)) ** 2))
-
-        mask[0] = 0.0  # Remove DC
-        X = X * mask
-        filtered_window = np.fft.irfft(X, n=len(window_noise)).astype(np.float32)
-
-        # Remove DC offset
-        filtered_window = filtered_window - np.mean(filtered_window)
-
-        # Apply gain
-        filtered_window = filtered_window * gain
+        # Brown noise is already filtered, just apply gain
+        filtered_window = window_noise * gain
 
         # Apply panning
         left_gain = math.cos(pan * math.pi / 2)
