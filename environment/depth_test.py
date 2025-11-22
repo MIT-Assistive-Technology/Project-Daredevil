@@ -23,7 +23,7 @@ import torch
 # cd /Users/annachan/Project-Daredevil/environment
 #python3 depth_test.py --video sample.mov --run-midas
 
-# Run --> python3 depth_test.py --video sample.mov --run-midas --visualize 5
+# Run --> python3 depth_test.py --video newSample.mov --run-midas --visualize 5
 
 # Optional dependencies
 try:
@@ -120,10 +120,12 @@ def run_midas_on_frames(frames, out_png_dir, out_npy_dir=None, model=None, trans
                 align_corners=False,
             ).squeeze().cpu().numpy()
 
+
         # Normalize depth to [0, 1] (relative per-frame)
         d = pred - pred.min()
         if d.max() > 0:
             d = d / d.max()
+        # d = 1.0 - d # added this line 11/21
 
         # Save PNG as 16-bit
         png16 = np.clip(d * 65535.0, 0, 65535).astype(np.uint16)
@@ -160,20 +162,22 @@ if gaussian_filter1d is None:
         return np.convolve(x, k, mode="same")
 
 # 11/20 -add DEPTH_THRESHOLD_PERCENTILE, MIN_RUN_WIDTH, EDGE_MARGIN, remove MIN_PROM
-LOWER_BAND_FRAC = 0.33       # lower 1/3 of the image
+# LOWER_BAND_FRAC = 0.33       # lower 1/3 of the image
 SMOOTH_KERNEL   = 5          # for gaussian smoothing (pixels on the 1D column signal)
 DEPTH_THRESHOLD_PERCENTILE = 70 # Columns above this threshold % are OPEN
 MIN_RUN_WIDTH = 20           # minimum width (pixels) to count as an open space
-# MIN_PROM        = 0.01       # minimum prominence for a peak (0..1 depth scale) - LOWERED for better detection
 HFOV_DEG = 90.0              # approximate camera horizontal field of view (HOV)
 K_CANDIDATES    = 5          # max number of open-space directions per frame (increased for more detail)
-EDGE_MARGIN = 0.10           # ignore detections in outer 10% of image (edge)
+EDGE_MARGIN = 0.10       # ignore detections in outer 10% of image (edge)
 
+# 11/21 edit to try getting middle portion
 def column_depth_signal(depth_img):
-    # collapse bottom 1/3 of depth image to 1D signal (avg depth per column)
+    # collapse middle portion of depth image to 1D signal (avg depth per column)
     H, W = depth_img.shape
-    y0 = int(H * (1.0 - LOWER_BAND_FRAC))
-    band = depth_img[y0:H, :]
+    # y0 = int(H * (1.0 - LOWER_BAND_FRAC))
+    y_start = int(H * 0.30) # start at 30% from top
+    y_end = int(H* 0.70) # end at 70% from top
+    band = depth_img[y_start: y_end, :]
     sig = band.mean(axis=0)  # average depth per column
     # Smooth the signal to reduce noise
     sig_s = gaussian_filter1d(sig, sigma=SMOOTH_KERNEL)
@@ -194,8 +198,9 @@ def find_open_space_columns(sig, k=K_CANDIDATES):
     # Threshold: columns with depth above this are "open"
     threshold = np.percentile(sig, DEPTH_THRESHOLD_PERCENTILE)
 
+    # 11/21 also changed this sign to adjust inverting depth
     # Binary mask: True where depth > threshold
-    open_mask = sig > threshold
+    open_mask = sig < threshold
 
     # Find contiguous runs of True values
     runs = []
@@ -235,8 +240,9 @@ def find_open_space_columns(sig, k=K_CANDIDATES):
         avg_depth = np.mean(sig[start:end])
         valid_runs.append((center, avg_depth, width))
 
+    # 11/21 edit to reverse property
     # Sort by depth (most open first), then take top k
-    valid_runs.sort(key=lambda x: x[1], reverse=True)
+    valid_runs.sort(key=lambda x: x[1], reverse=False)
 
     # Return just the center columns
     cols = [r[0] for r in valid_runs[:k]]
@@ -264,7 +270,7 @@ def detect_open_spaces_for_depths(depth_glob):
         results.append({"path": p, "cols": cols, "azimuths_deg": az})
     return results
 
-# 11/20 added this (again with help of online friends hehe)
+# 11/20 added this
 # creates image that Alison mentioned to see what its doing with depth
 def visualize_open_space_detection(depth_path, output_path=None):
     """
@@ -288,9 +294,15 @@ def visualize_open_space_detection(depth_path, output_path=None):
     sig = column_depth_signal(d)
     cols = find_open_space_columns(sig)
 
+    # DEBUG: Print actual values
+    print(f"Depth min: {d.min()}, max: {d.max()}")
+    print(f"Signal min: {sig.min()}, max: {sig.max()}")
+    print(f"Center column value: {sig[W//2]}")
+    print(f"Edge column value: {sig[50]}")
+
     # Calculate threshold for visualization
     threshold = np.percentile(sig, DEPTH_THRESHOLD_PERCENTILE)
-    open_mask = sig > threshold
+    open_mask = sig < threshold
 
     # Find runs for visualization
     runs = []
@@ -321,9 +333,12 @@ def visualize_open_space_detection(depth_path, output_path=None):
         ax1.axvline(x=col, color='lime', linewidth=2, linestyle='--', alpha=0.8)
 
     # Show the analysis band (lower 1/3)
-    y0 = int(H * (1.0 - LOWER_BAND_FRAC))
-    ax1.axhline(y=y0, color='cyan', linewidth=1, linestyle=':', alpha=0.7)
-    ax1.text(10, y0 - 10, "Analysis band (lower 1/3)", color='cyan', fontsize=9)
+    # y0 = int(H * (1.0 - LOWER_BAND_FRAC))
+    y_start = int(H * 0.15)
+    y_end = int(H * 0.45)
+    ax1.axhline(y=y_start, color='cyan', linewidth=1, linestyle=':', alpha=0.7)
+    ax1.axhline(y=y_end, color='cyan', linewidth=1, linestyle=':', alpha=0.7)
+    ax1.text(10, y_start - 10, "Analysis band (upper-middle)", color='cyan', fontsize=9)
 
     # Show edge margins
     left_margin = int(W * EDGE_MARGIN)
@@ -353,7 +368,7 @@ def visualize_open_space_detection(depth_path, output_path=None):
     ax2.axvspan(right_margin, W, alpha=0.2, color='red')
 
     ax2.set_xlabel("Column (pixels)")
-    ax2.set_ylabel("Average Depth (0=close, 1=far)")
+    ax2.set_ylabel("Average Depth (0=far, 1=close)")
     ax2.set_title("1D Depth Signal with Open Space Detection", fontsize=12)
     ax2.legend(loc='lower right')
     ax2.set_xlim(0, W)
