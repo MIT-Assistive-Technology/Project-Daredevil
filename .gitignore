@@ -208,3 +208,18 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Large data files
+*.MOV
+*.mov
+*.mp4
+*.avi
+data/depth_npy/
+data/depth/
+data/frames/
+data/test_results/
+*.npy
+*.pt
+*.pth
+*.h5
+*.hdf5
