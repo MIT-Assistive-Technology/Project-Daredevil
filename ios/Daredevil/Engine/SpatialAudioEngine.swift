@@ -41,7 +41,6 @@ final class SpatialAudioEngine {
     private let hearingGuard: HearingGuard
     private let controlQueue = DispatchQueue(label: "daredevil.audio.control", qos: .userInitiated)
     private var controlTimer: DispatchSourceTimer?
-    private var schedulerTimer: DispatchSourceTimer?
 
     /// Segment length for noise scheduling.
     private let segmentDuration: Double = 0.1
@@ -101,7 +100,15 @@ final class SpatialAudioEngine {
         players.forEach { $0.play() }
 
         isRunning = true
-        startSchedulerLoop()
+        // Prime each slot with two segments; every completed segment
+        // schedules its replacement, keeping playback self-clocked against
+        // the audio hardware with no timer drift.
+        controlQueue.sync {
+            for slot in 0..<Self.slotCount {
+                scheduleSegment(slot: slot)
+                scheduleSegment(slot: slot)
+            }
+        }
         startControlLoop()
     }
 
@@ -110,8 +117,6 @@ final class SpatialAudioEngine {
         isRunning = false
         controlTimer?.cancel()
         controlTimer = nil
-        schedulerTimer?.cancel()
-        schedulerTimer = nil
 
         // Silence-first teardown: volumes to zero before the graph stops.
         players.forEach { $0.volume = 0 }
@@ -148,33 +153,23 @@ final class SpatialAudioEngine {
 
     // MARK: - Noise scheduling
 
-    /// Keeps every player fed with band-passed noise segments matching the
-    /// current cue's depth. Runs at segment cadence with 2 segments in flight.
-    private func startSchedulerLoop() {
-        // Prime two segments per player so playback never starves.
-        controlQueue.sync {
-            for _ in 0..<2 { scheduleSegments() }
-        }
-        let timer = DispatchSource.makeTimerSource(queue: controlQueue)
-        timer.schedule(deadline: .now() + segmentDuration, repeating: segmentDuration)
-        timer.setEventHandler { [weak self] in
-            self?.scheduleSegments()
-        }
-        timer.resume()
-        schedulerTimer = timer
-    }
-
-    private func scheduleSegments() {
+    /// Render and schedule one segment for a slot; on completion, schedule
+    /// the next. Two segments stay in flight per slot, clocked by the audio
+    /// hardware itself. Must be called on controlQueue.
+    private func scheduleSegment(slot: Int) {
         guard isRunning else { return }
         let frameCount = AVAudioFrameCount(renderers[0].sampleRate * segmentDuration)
-        for slot in 0..<Self.slotCount {
-            let depth = cues[slot]?.depthMeters ?? CueMapping.maxDepthMeters
-            let buffer = renderers[slot].render(
-                frameCount: frameCount,
-                centerHz: CueMapping.frequency(forDepthMeters: depth),
-                bandwidthHz: CueMapping.bandwidth(forDepthMeters: depth)
-            )
-            players[slot].scheduleBuffer(buffer)
+        let depth = cues[slot]?.depthMeters ?? CueMapping.maxDepthMeters
+        let buffer = renderers[slot].render(
+            frameCount: frameCount,
+            centerHz: CueMapping.frequency(forDepthMeters: depth),
+            bandwidthHz: CueMapping.bandwidth(forDepthMeters: depth)
+        )
+        players[slot].scheduleBuffer(buffer) { [weak self] in
+            guard let self else { return }
+            self.controlQueue.async {
+                self.scheduleSegment(slot: slot)
+            }
         }
     }
 
