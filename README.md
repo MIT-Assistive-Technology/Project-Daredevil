@@ -2,7 +2,13 @@
 
 **Spatial Audio Blind Assistance**
 
-A computer vision and spatial audio system that combines object detection, monocular depth estimation, and spatial audio processing to create an immersive audio experience based on detected objects in the camera view. Project Daredevil explores how consumer devices (iPhone, AirPods, webcams) can provide affordable, real-time spatial audio feedback to blind and low-vision users.
+A computer vision and spatial audio system that translates depth perception into sound — like digital echolocation. Project Daredevil explores how consumer devices (iPhone, AirPods) can provide affordable, real-time spatial audio feedback to blind and low-vision users.
+
+## ➡️ The app: [`ios/`](ios/README.md)
+
+The finished deliverable is a **native iOS app** (iPhone Pro LiDAR + AirPods spatial audio). It reimplements the pipeline with real metric depth, correct depth→audio polarity, temporal smoothing, hearing protection, and a VoiceOver-first UI. See [ios/README.md](ios/README.md) for build/deploy instructions.
+
+Everything below documents the original Python prototype, kept as reference.
 
 ## [Design Review Slides](https://docs.google.com/presentation/d/1qIadIwMdu863MYsWHZKzjytCuk-a4r40REGFNMkRoNw/edit?usp=sharing)
 

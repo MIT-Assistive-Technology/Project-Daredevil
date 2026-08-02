@@ -223,3 +223,13 @@ data/test_results/
 *.pth
 *.h5
 *.hdf5
+
+# Xcode / iOS
+ios/Daredevil.xcodeproj/xcuserdata/
+ios/Daredevil.xcodeproj/project.xcworkspace/xcuserdata/
+ios/build/
+ios/DerivedData/
+*.xcuserstate
+*.ipa
+*.dSYM.zip
+*.dSYM
